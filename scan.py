@@ -6,6 +6,7 @@ Examples:
   uv run scan.py --sector "Financial Services" --sector Healthcare
   uv run scan.py --list-sectors
   uv run scan.py --save                            # also writes data/history/<date>.csv
+  uv run scan.py -v                                # also log each NSE request / cache use
 
 Exit codes: 0 = ok, 1 = NSE unreachable, 2 = data is not from today's pre-open.
 """
@@ -17,6 +18,7 @@ import sys
 
 import pandas as pd
 
+from premarket import setup_logging
 from premarket.nse import NSEError
 from premarket.scanner import CACHE_DIR, fetch_snapshot, filter_stocks, load_config
 
@@ -37,7 +39,11 @@ def main() -> int:
                    help="list sectors of F&O stocks (with counts in range) and exit")
     p.add_argument("--save", action="store_true",
                    help="save the filtered list to data/history/<date>.csv")
+    p.add_argument("-v", "--verbose", action="store_true",
+                   help="log each NSE request and cache use to stderr")
     args = p.parse_args()
+    if args.verbose:
+        setup_logging()
     sectors = args.sectors if args.sectors is not None else cfg.sectors
 
     try:
