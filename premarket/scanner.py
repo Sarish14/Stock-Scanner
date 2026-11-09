@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
 import time
 import tomllib
 from dataclasses import dataclass, field
@@ -23,6 +24,7 @@ import pandas as pd
 
 from .nse import NSEClient, NSEError
 
+log = logging.getLogger(__name__)
 IST = ZoneInfo("Asia/Kolkata")
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 CACHE_DIR = PROJECT_DIR / "data"
@@ -103,6 +105,9 @@ def _read_cached_text(client: NSEClient, remote: str, local: Path, max_age_days:
                       fallback_remote: str | None = None) -> str:
     """Fetch an NSE archive file with an on-disk cache; use a stale copy if NSE is down."""
     if _cache_fresh(local, max_age_days):
+        age_h = (time.time() - local.stat().st_mtime) / 3600
+        log.info("Using cached %s (%.1fh old, refreshed every %gd) — no request",
+                 local.name, age_h, max_age_days)
         return local.read_text()
     try:
         try:
@@ -110,12 +115,15 @@ def _read_cached_text(client: NSEClient, remote: str, local: Path, max_age_days:
         except NSEError:
             if not fallback_remote:
                 raise
+            log.warning("Falling back to %s", fallback_remote)
             text = client.get_archive_text(fallback_remote)
         local.parent.mkdir(parents=True, exist_ok=True)
         local.write_text(text)
+        log.info("Saved %s to cache", local.name)
         return text
     except NSEError:
         if local.exists():
+            log.warning("NSE unreachable; using stale cached %s", local.name)
             return local.read_text()
         raise
 
@@ -200,9 +208,12 @@ def parse_preopen(payload: dict, sectors: dict[str, tuple[str, str]],
 
 
 def fetch_snapshot(client: NSEClient | None = None, cache_dir: Path = CACHE_DIR) -> Snapshot:
+    t0 = time.monotonic()
     client = client or NSEClient()
     payload = client.get_json("/api/market-data-pre-open", params={"key": "FO"})
     df, ts = parse_preopen(payload, load_sector_map(client, cache_dir), load_lot_sizes(client, cache_dir))
+    log.info("Snapshot ready: %d F&O stocks, NSE data as of %s, took %.2fs",
+             len(df), ts.strftime("%d-%b-%Y %H:%M:%S") if ts else "?", time.monotonic() - t0)
     return Snapshot(df=df, nse_timestamp=ts, fetched_at=datetime.now(IST))
 
 
