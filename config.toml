@@ -1,0 +1,11 @@
+# Default settings — used by both the CLI (scan.py) and the web app (app.py).
+# Everything here can be overridden at runtime (CLI flags / sidebar controls).
+
+# Gap-up range, in percent, of pre-open price vs previous close (inclusive).
+# Negative values work too, e.g. min_pct = -2.0, max_pct = -1.0 for gap-downs.
+min_pct = 1.0
+max_pct = 2.0
+
+# Restrict to these sectors. Empty list = all sectors.
+# Run `uv run scan.py --list-sectors` to see valid names.
+sectors = []

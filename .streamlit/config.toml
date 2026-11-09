@@ -1,0 +1,23 @@
+# Shared settings, inherited by both the light and dark themes below.
+[theme]
+# Inter from Google Fonts; falls back to the system sans-serif if offline.
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap, sans-serif"
+headingFont = "Inter, sans-serif"
+baseFontSize = 18            # default is 16
+baseFontWeight = 400
+headingFontWeights = [700, 600, 600, 600, 600, 600]
+metricValueFontSize = "2.4rem"
+metricValueFontWeight = 600
+
+# Defining [theme.light] and [theme.dark] keeps Streamlit's Light / Dark /
+# "Use system setting" switcher (Settings menu, top right). With only a plain
+# [theme] section, Streamlit builds a single light-based theme and the
+# switcher disappears.
+[theme.light]
+headingFont = "Inter, sans-serif"   # same as above; just marks the section as defined
+
+[theme.dark]
+headingFont = "Inter, sans-serif"   # same as above; just marks the section as defined
+
+[browser]
+gatherUsageStats = false

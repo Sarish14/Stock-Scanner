@@ -1,0 +1,10 @@
+[project]
+name = "fno-premarket-scanner"
+version = "0.1.0"
+description = "Find F&O stocks opening in a configurable % range in NSE pre-open, filterable by sector"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2",
+    "requests>=2.32",
+    "streamlit>=1.40",
+]
