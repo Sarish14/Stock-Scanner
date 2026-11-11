@@ -189,14 +189,43 @@ else:
     m1.metric("F&O stocks scanned", len(snap.df))
     m2.metric(f"Between {lo:+.2f}% and {hi:+.2f}%", len(in_range))
 
+# ---------------------------------------------------------------- sector focus
+# One-click drill-down into a single sector of the current result. Chips only
+# list sectors that actually have stocks in the result (busiest first), so the
+# list adapts to the multiselect: pick 3 sectors -> 3 chips; pick none -> every
+# sector in range. Clicking the active chip again goes back to all of them.
+result_counts = result["Sector"].value_counts()  # sorted by count, desc
+focus_options = list(result_counts.index)
+FOCUS_KEY = "focus_sector"
+# Drop a stale focus (sector removed from the filter or no longer in range)
+# before the widget is created, so the table never goes silently empty.
+if st.session_state.get(FOCUS_KEY) not in focus_options:
+    st.session_state[FOCUS_KEY] = None
+
+focus = None
+if len(focus_options) > 1:
+    focus = st.pills(
+        "Show one sector",
+        options=focus_options,
+        selection_mode="single",
+        key=FOCUS_KEY,
+        format_func=lambda s: f"{s} · {result_counts[s]}",
+        help="Click a sector to see only its stocks; click it again to show all.",
+    )
+
+shown = result[result["Sector"] == focus] if focus else result
+
 # ---------------------------------------------------------------- results
 table_columns = COMPACT_COLUMNS if compact else COLUMNS
-st.dataframe(result, hide_index=True, width="stretch",
+st.dataframe(shown, hide_index=True, width="stretch",
              column_order=table_columns, column_config=COLUMN_CONFIG)
+if focus:
+    st.caption(f"Showing {len(shown)} of {len(result)} stocks · **{focus}** only")
 
 date_tag = nse_ts.strftime("%Y-%m-%d") if nse_ts else "latest"
-st.download_button("⬇️ Download CSV", result[table_columns].to_csv(index=False),
-                   file_name=f"fno_preopen_{date_tag}.csv", mime="text/csv")
+file_tag = f"_{focus.replace(' ', '_')}" if focus else ""
+st.download_button("⬇️ Download CSV", shown[table_columns].to_csv(index=False),
+                   file_name=f"fno_preopen_{date_tag}{file_tag}.csv", mime="text/csv")
 
 if len(in_range):
     with st.expander("Sector breakdown (within % range)"):
